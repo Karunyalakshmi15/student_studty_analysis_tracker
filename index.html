@@ -4,856 +4,1426 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Study Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        :root {
+            --ink: #0d0d14;
+            --ink-soft: #2a2a38;
+            --ink-muted: #5c5c78;
+            --surface: #f4f3f0;
+            --surface-card: #ffffff;
+            --accent: #5b4fff;
+            --accent-glow: rgba(91,79,255,0.18);
+            --accent2: #ff4f7b;
+            --accent3: #00c89f;
+            --accent4: #ffb94f;
+            --border: rgba(13,13,20,0.08);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --shadow: 0 4px 24px rgba(13,13,20,0.08);
+            --shadow-lg: 0 12px 48px rgba(13,13,20,0.14);
         }
-        
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'DM Sans', sans-serif;
+            background: var(--surface);
+            color: var(--ink);
             min-height: 100vh;
-            padding: 20px;
-            overflow-x: hidden; /* Prevent horizontal scroll from animations */
-            position: relative;
         }
 
-        /* --- NEW ANIMATIONS: FLOATING EMOJIS & DOODLES --- */
-        .doodle-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: -1;
-            overflow: hidden;
-        }
-
-        .floating-emoji {
-            position: absolute;
-            font-size: 2rem;
-            opacity: 0.6;
-            animation: floatAround 20s linear infinite;
-        }
-
-        @keyframes floatAround {
-            0% { transform: translate(0, 0) rotate(0deg); }
-            25% { transform: translate(100px, 150px) rotate(90deg); }
-            50% { transform: translate(200px, 0px) rotate(180deg); }
-            75% { transform: translate(100px, -150px) rotate(270deg); }
-            100% { transform: translate(0, 0) rotate(360deg); }
-        }
-
-        .doodle {
-            position: absolute;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            animation: pulseDoodle 8s ease-in-out infinite;
-        }
-
-        @keyframes pulseDoodle {
-            0%, 100% { transform: scale(1); opacity: 0.2; }
-            50% { transform: scale(1.5); opacity: 0.4; }
-        }
-
-        /* --- LOGIN PAGE STYLES --- */
+        /* ── LOGIN OVERLAY ── */
         #loginOverlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            position: fixed; inset: 0;
+            background: var(--ink);
+            display: flex; align-items: center; justify-content: center;
             z-index: 2000;
         }
 
         .login-card {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            background: #fff;
+            border-radius: 24px;
+            padding: 48px 40px;
+            width: 90%; max-width: 420px;
+            box-shadow: var(--shadow-lg);
             text-align: center;
-            width: 90%;
-            max-width: 400px;
         }
 
-        .login-card h2 {
-            color: #667eea;
-            margin-bottom: 20px;
+        .login-logo {
+            font-family: 'Syne', sans-serif;
+            font-size: 2rem; font-weight: 800;
+            color: var(--accent);
+            margin-bottom: 6px;
+            letter-spacing: -1px;
         }
+
+        .login-sub { color: var(--ink-muted); font-size: 0.9rem; margin-bottom: 32px; }
 
         .login-card input {
-            width: 100%;
-            padding: 15px;
-            margin-bottom: 20px;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 16px;
+            width: 100%; padding: 14px 18px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 15px; font-family: 'DM Sans', sans-serif;
+            outline: none; margin-bottom: 14px;
+            transition: border-color 0.2s;
         }
 
-        .login-card button {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
+        .login-card input:focus { border-color: var(--accent); }
+
+        .btn-primary {
+            width: 100%; padding: 14px;
+            background: var(--accent);
+            color: #fff; border: none;
+            border-radius: var(--radius-sm);
+            font-size: 15px; font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
             cursor: pointer;
-            font-size: 16px;
+            transition: background 0.2s, transform 0.15s;
         }
-        
-        /* --- MAIN APP STYLES --- */
-        .container {
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            position: relative;
-            z-index: 10;
+        .btn-primary:hover { background: #4338e0; transform: translateY(-1px); }
+
+        /* ── LAYOUT ── */
+        .app-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            min-height: 100vh;
         }
-        
-        header {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            background: var(--ink);
             color: #fff;
-            padding: 30px;
-            text-align: center;
-            position: relative;
-        }
-        
-        header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
-            animation: shimmer 3s infinite;
-        }
-        
-        @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
+            padding: 32px 20px;
+            position: sticky; top: 0; height: 100vh;
+            display: flex; flex-direction: column;
+            gap: 4px;
         }
 
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+        .sidebar-logo {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.25rem; font-weight: 800;
+            color: #fff; margin-bottom: 28px;
+            padding: 0 8px;
+            letter-spacing: -0.5px;
         }
 
-        .dashboard {
-            padding: 30px;
-            width: 100%;
-            background: linear-gradient(135deg, #f8f9ff, #e8f0fe);
-            min-height: calc(100vh - 200px);
+        .sidebar-logo span { color: var(--accent); }
+
+        .nav-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 12px; border-radius: 10px;
+            cursor: pointer; font-size: 14px; font-weight: 500;
+            color: rgba(255,255,255,0.55);
+            transition: background 0.2s, color 0.2s;
+            user-select: none;
         }
-        
+
+        .nav-item:hover { background: rgba(255,255,255,0.07); color: #fff; }
+        .nav-item.active { background: var(--accent); color: #fff; }
+        .nav-icon { font-size: 1.1rem; width: 22px; text-align: center; }
+
+        .sidebar-footer {
+            margin-top: auto; padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .user-chip {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px;
+        }
+
+        .user-avatar {
+            width: 34px; height: 34px; border-radius: 50%;
+            background: var(--accent); color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 14px; flex-shrink: 0;
+        }
+
+        .user-name { font-size: 13px; font-weight: 600; color: #fff; line-height: 1.2; }
+        .user-role { font-size: 11px; color: rgba(255,255,255,0.4); }
+
+        .logout-btn {
+            width: 100%; margin-top: 8px; padding: 9px;
+            background: rgba(255,75,75,0.12); color: #ff6b6b;
+            border: 1px solid rgba(255,75,75,0.2);
+            border-radius: 8px; font-size: 13px; font-weight: 500;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer; transition: background 0.2s;
+        }
+        .logout-btn:hover { background: rgba(255,75,75,0.22); }
+
+        /* ── MAIN ── */
+        .main-area {
+            padding: 36px 40px;
+            overflow-y: auto;
+        }
+
+        .page-header {
+            margin-bottom: 32px;
+        }
+
+        .page-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 2rem; font-weight: 800;
+            color: var(--ink); letter-spacing: -0.5px;
+        }
+
+        .page-subtitle { color: var(--ink-muted); font-size: 0.9rem; margin-top: 4px; }
+
+        /* ── SECTIONS (tabs) ── */
+        .section { display: none; }
+        .section.active { display: block; }
+
+        /* ── CARDS ── */
         .card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            padding: 25px;
-            margin: 20px 0;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            position: relative;
-            overflow: hidden;
+            background: var(--surface-card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 28px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
         }
-        
-        .card h2, .card h3 {
-            color: #667eea;
-            margin-bottom: 20px;
-            font-size: 1.5rem;
+
+        .card-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.1rem; font-weight: 700;
+            color: var(--ink); margin-bottom: 20px;
+            display: flex; align-items: center; gap: 10px;
         }
-        
-        .card input, .card textarea {
-            padding: 12px 16px;
-            margin: 8px 0;
-            width: 100%;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: all 0.3s ease;
+
+        .card-title .icon-badge {
+            width: 34px; height: 34px; border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem;
         }
-        
-        .card input:focus, .card textarea:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        .card button {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: #fff;
-            cursor: pointer;
-            margin: 8px 0;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        
-        .stats-grid {
+
+        /* ── STATS GRID ── */
+        .stats-row {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-        
-        .stat-item {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-        }
-        
-        .stat-number {
-            font-size: 2rem;
-            font-weight: bold;
-            display: block;
-        }
-        
-        .study-list, .todo-list {
-            max-height: 300px;
-            overflow-y: auto;
-            padding-right: 10px;
-            margin-top: 15px;
-        }
-        
-        .study-item, .todo-item {
-            background: #f8f9ff;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 4px solid #667eea;
-        }
-        
-        .remove-btn {
-            background: #ff6b6b !important;
-            color: white !important;
-            border: none !important;
-            padding: 5px 10px !important;
-            border-radius: 4px !important;
-            font-size: 12px !important;
-            cursor: pointer;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 16px; margin-bottom: 24px;
         }
 
-        /* --- FLASHCARD MODULE STYLES --- */
-        .flashcard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
+        .stat-card {
+            background: var(--surface-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 22px 20px;
+            box-shadow: var(--shadow);
         }
 
-        .flashcard {
-            perspective: 1000px;
-            height: 160px;
-            cursor: pointer;
+        .stat-card .label {
+            font-size: 12px; font-weight: 600; letter-spacing: 0.06em;
+            text-transform: uppercase; color: var(--ink-muted);
+            margin-bottom: 8px;
         }
 
-        .flashcard-inner {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            text-align: center;
-            transition: transform 0.6s;
-            transform-style: preserve-3d;
+        .stat-card .number {
+            font-family: 'Syne', sans-serif;
+            font-size: 2.4rem; font-weight: 800;
+            color: var(--ink); line-height: 1;
         }
 
-        .flashcard.flipped .flashcard-inner {
-            transform: rotateY(180deg);
+        .stat-card .number span { font-size: 1rem; font-weight: 500; color: var(--ink-muted); }
+
+        .stat-card .change {
+            font-size: 12px; margin-top: 6px; color: var(--accent3); font-weight: 600;
         }
 
-        .flashcard-front, .flashcard-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            border: 1px solid #e2e8f0;
-            font-weight: 500;
+        /* ── INPUTS ── */
+        .form-row {
+            display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
         }
 
-        .flashcard-front {
-            background: white;
-            color: #333;
+        .form-field { flex: 1; min-width: 160px; display: flex; flex-direction: column; gap: 5px; }
+        .form-label { font-size: 12px; font-weight: 600; color: var(--ink-muted); letter-spacing: 0.04em; text-transform: uppercase; }
+
+        input[type=text], input[type=number], textarea, select {
+            padding: 11px 14px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 14px; font-family: 'DM Sans', sans-serif;
+            background: #fff; color: var(--ink);
+            outline: none; width: 100%;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
-        .flashcard-back {
-            background: #764ba2;
-            color: white;
-            transform: rotateY(180deg);
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
         }
 
-        .delete-fc {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background: #ff6b6b;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 22px;
-            height: 22px;
-            font-size: 12px;
-            cursor: pointer;
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .btn {
+            padding: 11px 20px;
+            border: none; border-radius: var(--radius-sm);
+            font-size: 14px; font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer; transition: all 0.18s;
+            display: inline-flex; align-items: center; gap: 7px;
         }
 
-        /* --- GROUP STUDY SESSION STYLES --- */
-        .group-container {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+        .btn-accent { background: var(--accent); color: #fff; }
+        .btn-accent:hover { background: #4338e0; transform: translateY(-1px); }
+        .btn-danger { background: rgba(255,75,75,0.1); color: #e53e3e; border: 1px solid rgba(255,75,75,0.2); }
+        .btn-danger:hover { background: rgba(255,75,75,0.18); }
+        .btn-ghost { background: var(--surface); color: var(--ink-soft); border: 1px solid var(--border); }
+        .btn-ghost:hover { background: #e9e8e4; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+        /* ── STUDY LIST ── */
+        .study-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 16px; border-radius: var(--radius-sm);
+            background: var(--surface); margin-bottom: 8px;
+            border-left: 3px solid var(--accent);
         }
 
-        .members-bar {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-        }
-
-        .member-slot {
-            padding: 8px 12px;
-            background: #edf2f7;
-            border-radius: 20px;
-            font-size: 12px;
-            color: #4a5568;
-            border: 1px dashed #cbd5e0;
-        }
-
-        .member-slot.active {
-            background: #667eea;
-            color: white;
-            border-style: solid;
-        }
-
-        .chat-box {
-            height: 300px;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 15px;
-            overflow-y: auto;
-            background: #fff;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .chat-msg {
-            max-width: 80%;
-            padding: 10px;
-            border-radius: 12px;
-            font-size: 13px;
-            position: relative;
-        }
-
-        .chat-msg.me {
-            align-self: flex-end;
-            background: #667eea;
-            color: white;
-        }
-
-        .chat-msg.others {
-            align-self: flex-start;
-            background: #f1f5f9;
-            color: #333;
-        }
-
-        .chat-msg img {
-            max-width: 100%;
-            border-radius: 8px;
-            margin-top: 5px;
-            display: block;
-        }
-
-        .chat-msg .sender-name {
-            font-size: 10px;
-            font-weight: bold;
-            margin-bottom: 2px;
-            display: block;
-        }
-
-        .chat-controls {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .image-upload-btn {
-            background: #718096 !important;
-            padding: 10px !important;
-            width: auto !important;
-        }
+        .study-item .info { display: flex; flex-direction: column; gap: 2px; }
+        .study-item .subject { font-weight: 600; font-size: 14px; }
+        .study-item .meta { font-size: 12px; color: var(--ink-muted); }
 
         .no-data {
-            text-align: center;
-            color: #718096;
-            padding: 40px;
-            font-style: italic;
+            text-align: center; padding: 40px 20px;
+            color: var(--ink-muted); font-size: 14px;
+            border: 2px dashed var(--border); border-radius: var(--radius-sm);
+        }
+
+        /* ── FLASHCARDS ── */
+        .flashcard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px; margin-top: 16px;
+        }
+
+        .flashcard { perspective: 1000px; height: 150px; cursor: pointer; }
+        .flashcard-inner {
+            position: relative; width: 100%; height: 100%;
+            text-align: center; transition: transform 0.5s;
+            transform-style: preserve-3d;
+        }
+        .flashcard.flipped .flashcard-inner { transform: rotateY(180deg); }
+
+        .flashcard-front, .flashcard-back {
+            position: absolute; width: 100%; height: 100%;
+            backface-visibility: hidden;
+            display: flex; align-items: center; justify-content: center;
+            padding: 16px; border-radius: var(--radius-sm);
+            font-size: 13px; font-weight: 500;
+            border: 2px solid var(--border);
+        }
+
+        .flashcard-front { background: #fff; color: var(--ink); }
+        .flashcard-back { background: var(--accent); color: #fff; transform: rotateY(180deg); border-color: transparent; }
+
+        .delete-fc {
+            position: absolute; top: 6px; right: 6px;
+            background: rgba(0,0,0,0.12); color: #fff;
+            border: none; border-radius: 50%; width: 20px; height: 20px;
+            font-size: 11px; cursor: pointer; z-index: 10;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        /* ── CHAT ── */
+        .chat-box {
+            height: 280px; border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 16px; overflow-y: auto; background: var(--surface);
+            display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;
+        }
+
+        .chat-msg { max-width: 78%; padding: 10px 14px; border-radius: 14px; font-size: 13px; }
+        .chat-msg.me { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+        .chat-msg.others { align-self: flex-start; background: #fff; color: var(--ink); border-bottom-left-radius: 4px; border: 1px solid var(--border); }
+        .chat-msg .sender-name { font-size: 10px; font-weight: 700; margin-bottom: 3px; opacity: 0.7; display: block; }
+        .chat-msg img { max-width: 100%; border-radius: 8px; margin-top: 5px; display: block; }
+
+        .members-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+        .member-slot {
+            padding: 5px 12px; border-radius: 20px;
+            font-size: 12px; font-weight: 500;
+            background: var(--surface); color: var(--ink-muted); border: 1px dashed var(--border);
+        }
+        .member-slot.active { background: var(--accent); color: #fff; border-style: solid; border-color: transparent; }
+
+        .chat-controls { display: flex; gap: 8px; align-items: center; }
+        .chat-controls input { flex: 1; }
+
+        /* ── REPORT LIST ── */
+        .report-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 14px; border-radius: 8px;
+            background: var(--surface); margin-bottom: 6px; font-size: 14px;
+        }
+        .report-row .bar-wrap { flex: 1; margin: 0 14px; height: 6px; background: #e2e2ec; border-radius: 3px; overflow: hidden; }
+        .report-row .bar-fill { height: 100%; background: var(--accent); border-radius: 3px; }
+
+        /* ── TODO / REMINDERS ── */
+        .todo-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 16px; background: var(--surface);
+            border-radius: var(--radius-sm); margin-bottom: 8px;
+            gap: 12px; transition: opacity 0.2s;
+        }
+        .todo-item.todo-done { opacity: 0.55; }
+
+        .todo-check {
+            width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
+            border: 2px solid var(--border); background: #fff; cursor: pointer;
+            font-size: 12px; font-weight: 700; color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.18s;
+        }
+        .todo-check.checked { background: var(--accent3); border-color: var(--accent3); }
+
+        .todo-time {
+            font-size: 11px; color: var(--ink-muted); margin-top: 3px; font-weight: 500;
+        }
+        .todo-time.overdue { color: var(--accent2); font-weight: 700; }
+
+        /* ── QUIZ MODULE (REDESIGNED) ── */
+        .quiz-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .quiz-meta {
+            display: flex; gap: 16px;
+        }
+
+        .quiz-badge {
+            padding: 5px 12px; border-radius: 20px;
+            font-size: 12px; font-weight: 600;
+            background: var(--surface); color: var(--ink-muted);
+            border: 1px solid var(--border);
+        }
+
+        .quiz-badge.active { background: rgba(91,79,255,0.1); color: var(--accent); border-color: rgba(91,79,255,0.25); }
+
+        .quiz-start-screen {
+            text-align: center; padding: 48px 20px;
+        }
+
+        .quiz-start-icon { font-size: 3.5rem; margin-bottom: 16px; }
+
+        .quiz-start-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.6rem; font-weight: 800; margin-bottom: 8px;
+        }
+
+        .quiz-start-desc { color: var(--ink-muted); font-size: 14px; margin-bottom: 28px; }
+
+        .quiz-info-pills {
+            display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 28px;
+        }
+
+        .quiz-info-pill {
+            padding: 7px 16px; border-radius: 20px;
+            border: 1.5px solid var(--border);
+            font-size: 13px; font-weight: 500; color: var(--ink-soft);
+        }
+
+        /* Progress bar */
+        .quiz-progress-bar {
+            height: 5px; background: #e2e2ec; border-radius: 3px; margin-bottom: 28px; overflow: hidden;
+        }
+        .quiz-progress-fill {
+            height: 100%; background: var(--accent); border-radius: 3px;
+            transition: width 0.4s ease;
+        }
+
+        .quiz-q-counter {
+            font-size: 12px; color: var(--ink-muted); font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px;
+        }
+
+        .quiz-question {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.25rem; font-weight: 700;
+            color: var(--ink); margin-bottom: 24px; line-height: 1.4;
+        }
+
+        .quiz-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+
+        .quiz-option {
+            display: flex; align-items: center; gap: 14px;
+            padding: 14px 18px; border-radius: var(--radius-sm);
+            border: 2px solid var(--border);
+            background: #fff; cursor: pointer;
+            transition: all 0.18s; font-size: 14px; font-weight: 500;
+        }
+
+        .quiz-option:hover { border-color: var(--accent); background: rgba(91,79,255,0.04); }
+
+        .quiz-option.selected { border-color: var(--accent); background: rgba(91,79,255,0.07); }
+        .quiz-option.correct { border-color: var(--accent3); background: rgba(0,200,159,0.08); }
+        .quiz-option.wrong { border-color: var(--accent2); background: rgba(255,79,123,0.07); }
+
+        .quiz-option-letter {
+            width: 28px; height: 28px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; flex-shrink: 0;
+            background: var(--surface); color: var(--ink-muted);
+            border: 1.5px solid var(--border);
+        }
+
+        .quiz-option.selected .quiz-option-letter { background: var(--accent); color: #fff; border-color: transparent; }
+        .quiz-option.correct .quiz-option-letter { background: var(--accent3); color: #fff; border-color: transparent; }
+        .quiz-option.wrong .quiz-option-letter { background: var(--accent2); color: #fff; border-color: transparent; }
+
+        .quiz-nav {
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        /* Results screen */
+        .quiz-result-screen { text-align: center; padding: 40px 20px; }
+
+        .quiz-score-ring {
+            width: 130px; height: 130px; border-radius: 50%;
+            border: 6px solid var(--surface);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 20px;
+            font-family: 'Syne', sans-serif;
+            font-size: 2.2rem; font-weight: 800;
+            position: relative;
+        }
+
+        .quiz-result-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.5rem; font-weight: 800; margin-bottom: 6px;
+        }
+
+        .quiz-result-sub { color: var(--ink-muted); font-size: 14px; margin-bottom: 28px; }
+
+        .quiz-result-breakdown {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+            margin-bottom: 28px; text-align: left;
+        }
+
+        .quiz-result-stat {
+            background: var(--surface); border-radius: var(--radius-sm);
+            padding: 14px 16px;
+        }
+
+        .quiz-result-stat .rl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); margin-bottom: 4px; }
+        .quiz-result-stat .rv { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; }
+        .rv.good { color: var(--accent3); }
+        .rv.bad { color: var(--accent2); }
+        .rv.accent { color: var(--accent); }
+
+        /* Answer review */
+        .quiz-review { margin-top: 20px; text-align: left; }
+        .quiz-review-item {
+            padding: 14px 16px; border-radius: var(--radius-sm);
+            border: 1.5px solid var(--border); margin-bottom: 10px;
+            background: #fff;
+        }
+        .quiz-review-item.qr-correct { border-color: var(--accent3); }
+        .quiz-review-item.qr-wrong { border-color: var(--accent2); }
+        .quiz-review-item .qr-q { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+        .quiz-review-item .qr-ans { font-size: 13px; color: var(--ink-muted); }
+        .qr-mark { font-size: 13px; font-weight: 600; }
+        .qr-mark.ok { color: var(--accent3); }
+        .qr-mark.no { color: var(--accent2); }
+
+        /* ── FEEDBACK ── */
+        textarea { resize: vertical; min-height: 100px; }
+
+        /* ── NOTIFICATION ── */
+        .toast {
+            position: fixed; bottom: 28px; right: 28px;
+            background: var(--ink); color: #fff;
+            padding: 13px 20px; border-radius: 10px;
+            font-size: 14px; font-weight: 500;
+            box-shadow: var(--shadow-lg); z-index: 9999;
+            transform: translateY(10px); opacity: 0;
+            animation: toastIn 0.3s ease forwards;
+        }
+        @keyframes toastIn { to { transform: translateY(0); opacity: 1; } }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            .app-layout { grid-template-columns: 1fr; }
+            .sidebar { flex-direction: row; flex-wrap: wrap; height: auto; position: relative; padding: 16px; gap: 8px; }
+            .sidebar-logo { width: 100%; margin-bottom: 8px; }
+            .sidebar-footer { margin-top: 0; padding-top: 0; border-top: none; display: flex; gap: 8px; align-items: center; }
+            .nav-item { padding: 8px 10px; font-size: 12px; }
+            .nav-icon { font-size: 1rem; }
+            .main-area { padding: 20px 16px; }
+            .quiz-result-breakdown { grid-template-columns: 1fr 1fr; }
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class="doodle-bg" id="doodleLayer"></div>
 
-    <div id="loginOverlay">
-        <div class="login-card">
-            <h2>Welcome Back</h2>
-            <p style="margin-bottom: 20px; color: #718096;">Please enter your name to continue</p>
-            <input type="text" id="loginName" placeholder="Your Name" autocomplete="off">
-            <button onclick="handleLogin()">Login</button>
-        </div>
+<div id="doodleLayer" style="position:fixed;inset:0;pointer-events:none;z-index:-1;overflow:hidden;"></div>
+
+<!-- LOGIN -->
+<div id="loginOverlay">
+    <div class="login-card">
+        <div class="login-logo">StudyTrack</div>
+        <p class="login-sub">Your personal study companion</p>
+        <input type="text" id="loginName" placeholder="Enter your name to begin" autocomplete="off">
+        <button class="btn-primary" onclick="handleLogin()">Get Started →</button>
     </div>
+</div>
 
-    <div class="container">
-        <header>
-            <h1>📚 Student Study Analysis</h1>
-            <p id="userGreeting" style="margin-top: 5px; font-size: 14px; opacity: 0.9;"></p>
-            <button onclick="logout()" class="remove-btn" style="position: absolute; top: 20px; right: 20px;">Logout</button>
-        </header>
-        
-        <div class="dashboard">
-            <div class="card" id="groupModule">
-                <h3>👥 Group Study Session (Simulated)</h3>
-                <div class="group-container">
-                    <div class="members-bar" id="memberBar"></div>
-                    
-                    <div id="joinSection">
-                        <button onclick="joinGroupSession()">Join Current Session (Max 5)</button>
-                    </div>
-
-                    <div id="chatSection" style="display:none;">
-                        <div class="chat-box" id="chatBox"></div>
-                        <div class="chat-controls">
-                            <input id="chatInput" placeholder="Type a message..." autocomplete="off">
-                            <input type="file" id="imgInput" accept="image/*" style="display:none;" onchange="sendImage(this)">
-                            <button class="image-upload-btn" onclick="document.getElementById('imgInput').click()">📷</button>
-                            <button onclick="sendMessage()">Send</button>
-                        </div>
-                        <button onclick="leaveGroupSession()" class="remove-btn" style="width: 100px; margin-top: 10px;">Leave Session</button>
-                    </div>
+<!-- APP -->
+<div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">Study<span>Track</span></div>
+        <div class="nav-item active" onclick="showSection('dashboard', this)">
+            <span class="nav-icon">📊</span> Dashboard
+        </div>
+        <div class="nav-item" onclick="showSection('tracker', this)">
+            <span class="nav-icon">📚</span> Study Tracker
+        </div>
+        <div class="nav-item" onclick="showSection('flashcards', this)">
+            <span class="nav-icon">🗂️</span> Flashcards
+        </div>
+        <div class="nav-item" onclick="showSection('group', this)">
+            <span class="nav-icon">👥</span> Group Study
+        </div>
+        <div class="nav-item" onclick="showSection('analytics', this)">
+            <span class="nav-icon">📈</span> Analytics
+        </div>
+        <div class="nav-item" onclick="showSection('todos', this)">
+            <span class="nav-icon">✅</span> To-Do
+        </div>
+        <div class="nav-item" onclick="showSection('quiz', this)">
+            <span class="nav-icon">🧠</span> Quiz
+        </div>
+        <div class="nav-item" onclick="showSection('feedback', this)">
+            <span class="nav-icon">💬</span> Feedback
+        </div>
+        <div class="sidebar-footer">
+            <div class="user-chip">
+                <div class="user-avatar" id="userAvatar">?</div>
+                <div>
+                    <div class="user-name" id="userName">—</div>
+                    <div class="user-role">Student</div>
                 </div>
             </div>
+            <button class="logout-btn" onclick="logout()">Sign out</button>
+        </div>
+    </aside>
 
-            <div class="card">
-                <h2>📊 Dashboard</h2>
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <span class="stat-number" id="totalHours">0</span>
-                        <span class="stat-label">Total Study Hours</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number" id="totalSubjects">0</span>
-                        <span class="stat-label">Subjects Studied</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number" id="avgHours">0</span>
-                        <span class="stat-label">Average Hours/Subject</span>
-                    </div>
+    <!-- Main -->
+    <main class="main-area">
+
+        <!-- DASHBOARD -->
+        <div class="section active" id="sec-dashboard">
+            <div class="page-header">
+                <div class="page-title" id="greetingTitle">Good day 👋</div>
+                <div class="page-subtitle">Here's your study overview</div>
+            </div>
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="label">Total Hours</div>
+                    <div class="number"><span id="totalHours">0</span> <span>hrs</span></div>
+                    <div class="change">↑ Keep it up!</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Subjects</div>
+                    <div class="number" id="totalSubjects">0</div>
+                    <div class="change" style="color:var(--accent4);">Active this week</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Avg / Subject</div>
+                    <div class="number"><span id="avgHours">0</span> <span>hrs</span></div>
+                    <div class="change" style="color:var(--accent2);">Per subject</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Flashcards</div>
+                    <div class="number" id="fcCount">0</div>
+                    <div class="change" style="color:var(--ink-muted);">In your deck</div>
                 </div>
             </div>
-            
             <div class="card">
-                <h3>📚 Study Tracker</h3>
-                <input id="subject" placeholder="Subject studied (e.g., Mathematics, Physics)" autocomplete="off">
-                <input id="hours" type="number" placeholder="Hours studied" min="0.1" step="0.1" max="24">
-                <button onclick="addStudy()" type="button">Add Study Session</button>
+                <div class="card-title"><span class="icon-badge" style="background:#ede9ff;">📈</span> Quick Report</div>
+                <div id="dashReport"><div class="no-data">No study sessions recorded yet.</div></div>
+            </div>
+        </div>
+
+        <!-- TRACKER -->
+        <div class="section" id="sec-tracker">
+            <div class="page-header">
+                <div class="page-title">Study Tracker</div>
+                <div class="page-subtitle">Log your study sessions</div>
+            </div>
+            <div class="card">
+                <div class="card-title"><span class="icon-badge" style="background:#ede9ff;">➕</span> Add Session</div>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label class="form-label">Subject</label>
+                        <input type="text" id="subject" placeholder="e.g. Mathematics" autocomplete="off">
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">Hours studied</label>
+                        <input type="number" id="hours" placeholder="e.g. 2.5" min="0.1" step="0.1" max="24">
+                    </div>
+                </div>
+                <button class="btn btn-accent" onclick="addStudy()">Add Session</button>
+            </div>
+            <div class="card">
+                <div class="card-title"><span class="icon-badge" style="background:#e6f9f4;">📋</span> Sessions</div>
                 <div id="studyList" class="study-list"></div>
             </div>
-
-            <div class="card">
-                <h3>🗂️ Flashcard Module</h3>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <input id="fcFront" placeholder="Question (Front side)" style="flex: 1; min-width: 200px;">
-                    <input id="fcBack" placeholder="Answer (Back side)" style="flex: 1; min-width: 200px;">
-                </div>
-                <button onclick="addFlashcard()" type="button">Create Flashcard</button>
-                <div id="flashcardGrid" class="flashcard-grid"></div>
-            </div>
-            
-            <div class="card">
-                <h3>📈 Analytics & Reports</h3>
-                <button onclick="downloadReport()" style="margin-bottom:10px;">⬇ Download Report</button>
-                <canvas id="studyChart" style="max-width:100%; height:300px;"></canvas>
-                <div id="report">
-                    <div class="no-data">No study data yet.</div>
-                </div>
-            </div>
-            
-            <div class="card">
-                <h3>⏰ Reminders & To-Do</h3>
-                <input id="todoInput" placeholder="Enter reminder or task..." autocomplete="off">
-                <button onclick="addTodo()" type="button">Add Task</button>
-                <div id="todoList" class="todo-list"></div>
-            </div>
-            
-            <div class="card">
-                <h3>📝 Quiz Module</h3>
-                <p>Test yourself on the basics!</p>
-                <div id="quizContainer"></div>
-                <button onclick="startQuiz()" type="button">Start Sample Quiz</button>
-                <div id="quizResult" style="margin-top:10px;"></div>
-            </div>
-
-            <div class="card">
-                <h3>💬 Feedback</h3>
-                <textarea id="fb" placeholder="Share your thoughts..." rows="4"></textarea>
-                <button onclick="submitFeedback()" type="button">Submit Feedback</button>
-                <div id="fbMsg" style="margin-top: 15px;"></div>
-            </div>
         </div>
-    </div>
 
-    <script>
-        let study = JSON.parse(localStorage.getItem('studyData')) || [];
-        let flashcards = JSON.parse(localStorage.getItem('flashcardData')) || [];
-        let groupSession = JSON.parse(localStorage.getItem('groupSession')) || { members: [], chat: [] };
-        let currentUser = localStorage.getItem('currentUser') || null;
-        let chartInstance = null;
-
-        window.addEventListener('load', () => {
-            initAnimations();
-            if (currentUser) {
-                document.getElementById('loginOverlay').style.display = 'none';
-                document.getElementById('userGreeting').textContent = `Hello, ${currentUser}!`;
-            }
-            updateStudy();
-            renderFlashcards();
-            renderGroupUI();
-        });
-
-        // --- ANIMATION INITIALIZER ---
-        function initAnimations() {
-            const layer = document.getElementById('doodleLayer');
-            const emojis = ['📚', '💡', '✏️', '🎓', '📓', '🔥', '🌟'];
-            
-            // Create Floating Emojis
-            for (let i = 0; i < 15; i++) {
-                const el = document.createElement('div');
-                el.className = 'floating-emoji';
-                el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-                el.style.left = Math.random() * 100 + 'vw';
-                el.style.top = Math.random() * 100 + 'vh';
-                el.style.animationDelay = (Math.random() * -20) + 's';
-                el.style.animationDuration = (15 + Math.random() * 15) + 's';
-                layer.appendChild(el);
-            }
-
-            // Create Pulsing Doodles
-            for (let i = 0; i < 8; i++) {
-                const doodle = document.createElement('div');
-                const size = 50 + Math.random() * 150;
-                doodle.className = 'doodle';
-                doodle.style.width = size + 'px';
-                doodle.style.height = size + 'px';
-                doodle.style.left = Math.random() * 100 + 'vw';
-                doodle.style.top = Math.random() * 100 + 'vh';
-                doodle.style.animationDelay = (Math.random() * -10) + 's';
-                layer.appendChild(doodle);
-            }
-        }
-
-        // --- LOGIN LOGIC ---
-        function handleLogin() {
-            const name = document.getElementById('loginName').value.trim();
-            if (!name) return alert("Please enter your name");
-            
-            currentUser = name;
-            localStorage.setItem('currentUser', name);
-            document.getElementById('loginOverlay').style.display = 'none';
-            document.getElementById('userGreeting').textContent = `Hello, ${currentUser}!`;
-            renderGroupUI();
-        }
-
-        function logout() {
-            leaveGroupSession();
-            currentUser = null;
-            localStorage.removeItem('currentUser');
-            document.getElementById('loginOverlay').style.display = 'flex';
-            document.getElementById('loginName').value = '';
-        }
-
-        // --- GROUP STUDY LOGIC ---
-        function renderGroupUI() {
-            const memberBar = document.getElementById('memberBar');
-            memberBar.innerHTML = '';
-            for(let i=0; i<5; i++) {
-                const name = groupSession.members[i] || 'Empty Slot';
-                memberBar.innerHTML += `<div class="member-slot ${groupSession.members[i] ? 'active' : ''}">${name}</div>`;
-            }
-
-            const isMember = groupSession.members.includes(currentUser);
-            if (currentUser && isMember) {
-                document.getElementById('joinSection').style.display = 'none';
-                document.getElementById('chatSection').style.display = 'block';
-                renderChat();
-            } else {
-                document.getElementById('joinSection').style.display = 'block';
-                document.getElementById('chatSection').style.display = 'none';
-            }
-        }
-
-        function joinGroupSession() {
-            if(groupSession.members.length >= 5) return alert("Session is full!");
-            if(groupSession.members.includes(currentUser)) return;
-            
-            groupSession.members.push(currentUser);
-            saveGroup();
-            renderGroupUI();
-        }
-
-        function leaveGroupSession() {
-            groupSession.members = groupSession.members.filter(m => m !== currentUser);
-            saveGroup();
-            renderGroupUI();
-        }
-
-        function sendMessage() {
-            const input = document.getElementById('chatInput');
-            if(!input.value.trim()) return;
-            
-            groupSession.chat.push({ user: currentUser, text: input.value, type: 'text' });
-            input.value = '';
-            saveGroup();
-            renderChat();
-        }
-
-        function sendImage(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    groupSession.chat.push({ user: currentUser, img: e.target.result, type: 'image' });
-                    saveGroup();
-                    renderChat();
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        function renderChat() {
-            const chatBox = document.getElementById('chatBox');
-            chatBox.innerHTML = groupSession.chat.map(m => `
-                <div class="chat-msg ${m.user === currentUser ? 'me' : 'others'}">
-                    <span class="sender-name">${m.user}</span>
-                    ${m.type === 'text' ? m.text : `<img src="${m.img}">`}
-                </div>
-            `).join('');
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        function saveGroup() {
-            localStorage.setItem('groupSession', JSON.stringify(groupSession));
-        }
-
-        // --- DASHBOARD & TOOLS LOGIC ---
-        function validateInput(value, type, min = null, max = null) {
-            if (!value || value.toString().trim() === '') return false;
-            if (type === 'number') {
-                const num = parseFloat(value);
-                if (isNaN(num)) return false;
-                if (min !== null && num < min) return false;
-                if (max !== null && num > max) return false;
-            }
-            return true;
-        }
-
-        function addStudy() {
-            const subjectInput = document.getElementById('subject');
-            const hoursInput = document.getElementById('hours');
-            if (!validateInput(subjectInput.value, 'text') || !validateInput(hoursInput.value, 'number', 0.1, 24)) {
-                alert('Please check your inputs');
-                return;
-            }
-            study.push({ s: subjectInput.value.trim(), h: parseFloat(hoursInput.value), date: new Date().toLocaleDateString() });
-            localStorage.setItem('studyData', JSON.stringify(study));
-            updateStudy();
-            subjectInput.value = ''; hoursInput.value = '';
-            showNotification('Session added!', 'success');
-        }
-
-        function removeStudy(index) {
-            study.splice(index, 1);
-            localStorage.setItem('studyData', JSON.stringify(study));
-            updateStudy();
-        }
-
-        function updateStudy() {
-            const studyList = document.getElementById('studyList');
-            const totalHoursEl = document.getElementById('totalHours');
-            const totalSubjectsEl = document.getElementById('totalSubjects');
-            const avgHoursEl = document.getElementById('avgHours');
-            const report = document.getElementById('report');
-
-            if (study.length === 0) {
-                studyList.innerHTML = '<div class="no-data">No sessions recorded.</div>';
-                totalHoursEl.textContent = '0'; totalSubjectsEl.textContent = '0'; avgHoursEl.textContent = '0';
-                return;
-            }
-
-            studyList.innerHTML = study.map((session, index) => 
-                `<div class="study-item">
-                    <div><strong>${session.s}</strong> - ${session.h} hrs</div>
-                    <button class="remove-btn" onclick="removeStudy(${index})">Remove</button>
-                </div>`
-            ).join('');
-
-            const totalHours = study.reduce((sum, s) => sum + s.h, 0);
-            const subjects = [...new Set(study.map(s => s.s))];
-            totalHoursEl.textContent = totalHours.toFixed(1);
-            totalSubjectsEl.textContent = subjects.length;
-            avgHoursEl.textContent = (totalHours / subjects.length).toFixed(1);
-
-            const subjectStats = {};
-            study.forEach(s => subjectStats[s.s] = (subjectStats[s.s] || 0) + s.h);
-            updateChart(subjectStats);
-
-            report.innerHTML = `<h4 style="color: #667eea;">Subject Breakdown:</h4>` + 
-                Object.entries(subjectStats).map(([sub, hrs]) => 
-                    `<div style="display: flex; justify-content: space-between; padding: 5px; background: #f8f9ff; margin-top: 5px; border-radius: 4px;">
-                        <span>${sub}</span><span>${hrs.toFixed(1)} hrs</span>
-                    </div>`).join('');
-        }
-
-        function addFlashcard() {
-            const frontInput = document.getElementById('fcFront');
-            const backInput = document.getElementById('fcBack');
-            if(!frontInput.value.trim() || !backInput.value.trim()) return alert("Fill both sides.");
-            flashcards.push({ front: frontInput.value.trim(), back: backInput.value.trim() });
-            localStorage.setItem('flashcardData', JSON.stringify(flashcards));
-            frontInput.value = ''; backInput.value = '';
-            renderFlashcards();
-            showNotification('Flashcard created!', 'success');
-        }
-
-        function renderFlashcards() {
-            const grid = document.getElementById('flashcardGrid');
-            if (flashcards.length === 0) {
-                grid.innerHTML = '<div class="no-data" style="grid-column: 1/-1;">No flashcards yet.</div>';
-                return;
-            }
-            grid.innerHTML = flashcards.map((fc, i) => `
-                <div class="flashcard" onclick="this.classList.toggle('flipped')">
-                    <button class="delete-fc" onclick="event.stopPropagation(); removeFlashcard(${i})">×</button>
-                    <div class="flashcard-inner">
-                        <div class="flashcard-front"><p>${fc.front}</p></div>
-                        <div class="flashcard-back"><p>${fc.back}</p></div>
+        <!-- FLASHCARDS -->
+        <div class="section" id="sec-flashcards">
+            <div class="page-header">
+                <div class="page-title">Flashcards</div>
+                <div class="page-subtitle">Click a card to reveal the answer</div>
+            </div>
+            <div class="card">
+                <div class="card-title"><span class="icon-badge" style="background:#fff3e0;">✏️</span> Create Card</div>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label class="form-label">Question</label>
+                        <input type="text" id="fcFront" placeholder="Front — the question">
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">Answer</label>
+                        <input type="text" id="fcBack" placeholder="Back — the answer">
                     </div>
                 </div>
-            `).join('');
+                <button class="btn btn-accent" onclick="addFlashcard()">Create Flashcard</button>
+                <div id="flashcardGrid" class="flashcard-grid"></div>
+            </div>
+        </div>
+
+        <!-- GROUP -->
+        <div class="section" id="sec-group">
+            <div class="page-header">
+                <div class="page-title">Group Study</div>
+                <div class="page-subtitle">Simulated collaborative session</div>
+            </div>
+            <div class="card">
+                <div class="card-title"><span class="icon-badge" style="background:#fce4ec;">👥</span> Session Room</div>
+                <div class="members-bar" id="memberBar"></div>
+                <div id="joinSection">
+                    <button class="btn btn-accent" onclick="joinGroupSession()">Join Session</button>
+                </div>
+                <div id="chatSection" style="display:none;">
+                    <div class="chat-box" id="chatBox"></div>
+                    <div class="chat-controls">
+                        <input type="text" id="chatInput" placeholder="Type a message…" autocomplete="off" onkeydown="if(event.key==='Enter')sendMessage()">
+                        <input type="file" id="imgInput" accept="image/*" style="display:none;" onchange="sendImage(this)">
+                        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('imgInput').click()">📷</button>
+                        <button class="btn btn-accent btn-sm" onclick="sendMessage()">Send</button>
+                    </div>
+                    <button class="btn btn-danger btn-sm" style="margin-top:12px;" onclick="leaveGroupSession()">Leave Session</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ANALYTICS -->
+        <div class="section" id="sec-analytics">
+            <div class="page-header">
+                <div class="page-title">Analytics</div>
+                <div class="page-subtitle">Visual breakdown of your study time</div>
+            </div>
+            <div class="card">
+                <div class="card-title" style="justify-content:space-between;">
+                    <span><span class="icon-badge" style="background:#ede9ff;display:inline-flex;margin-right:10px;">📊</span>Subject Breakdown</span>
+                    <button class="btn btn-ghost btn-sm" onclick="downloadReport()">⬇ Download</button>
+                </div>
+                <canvas id="studyChart" style="max-height:280px; margin-bottom:20px;"></canvas>
+                <div id="report"><div class="no-data">No study data yet.</div></div>
+            </div>
+        </div>
+
+        <!-- TODOS + REMINDERS -->
+        <div class="section" id="sec-todos">
+            <div class="page-header">
+                <div class="page-title">To-Do & Reminders</div>
+                <div class="page-subtitle">Set tasks with time-based notifications</div>
+            </div>
+
+            <!-- Notification permission banner -->
+            <div id="notifBanner" class="card" style="display:none; border:2px solid var(--accent4); background:rgba(255,185,79,0.06);">
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                    <div>
+                        <div style="font-weight:700;font-size:14px;">🔔 Enable Notifications</div>
+                        <div style="font-size:13px;color:var(--ink-muted);margin-top:2px;">Allow notifications so reminders can alert you at the right time.</div>
+                    </div>
+                    <button class="btn btn-accent btn-sm" onclick="requestNotifPermission()">Allow Notifications</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><span class="icon-badge" style="background:#e6f9f4;">➕</span> Add Task / Reminder</div>
+                <div class="form-row">
+                    <div class="form-field" style="flex:2;">
+                        <label class="form-label">Task or Reminder</label>
+                        <input type="text" id="todoInput" placeholder="e.g. Revise Chapter 3…" autocomplete="off" onkeydown="if(event.key==='Enter')addTodo()">
+                    </div>
+                    <div class="form-field" style="flex:1;min-width:170px;">
+                        <label class="form-label">Remind me at (optional)</label>
+                        <input type="datetime-local" id="todoTime">
+                    </div>
+                </div>
+                <button class="btn btn-accent" onclick="addTodo()">Add Task</button>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><span class="icon-badge" style="background:#ede9ff;">📋</span> Your Tasks</div>
+                <div id="todoList" style="margin-top:4px;"></div>
+                <div id="todoEmpty" class="no-data" style="display:none;">No tasks yet. Add one above!</div>
+            </div>
+        </div>
+
+        <!-- ══ QUIZ MODULE (REDESIGNED) ══ -->
+        <div class="section" id="sec-quiz">
+            <div class="page-header">
+                <div class="page-title">Quiz Module</div>
+                <div class="page-subtitle">Test your knowledge with instant feedback</div>
+            </div>
+            <div class="card" id="quizCard">
+                <!-- Start Screen -->
+                <div id="quizStartScreen" class="quiz-start-screen">
+                    <div class="quiz-start-icon">🧠</div>
+                    <div class="quiz-start-title">Knowledge Check</div>
+                    <p class="quiz-start-desc">Answer each question, get instant feedback, and see your results.</p>
+                    <div class="quiz-info-pills">
+                        <div class="quiz-info-pill">📝 <span id="qTotalBadge">2</span> Questions</div>
+                        <div class="quiz-info-pill">⚡ Instant feedback</div>
+                        <div class="quiz-info-pill">📊 Score breakdown</div>
+                    </div>
+                    <button class="btn btn-accent" style="padding:14px 32px; font-size:15px;" onclick="startQuiz()">Start Quiz →</button>
+                </div>
+
+                <!-- Question Screen -->
+                <div id="quizQuestionScreen" style="display:none;">
+                    <div class="quiz-header">
+                        <div id="qCounter" class="quiz-q-counter">Question 1 of 2</div>
+                        <div class="quiz-meta">
+                            <div class="quiz-badge active" id="qCorrectBadge">✓ 0</div>
+                            <div class="quiz-badge" id="qWrongBadge">✗ 0</div>
+                        </div>
+                    </div>
+                    <div class="quiz-progress-bar">
+                        <div class="quiz-progress-fill" id="quizProgress"></div>
+                    </div>
+                    <div class="quiz-question" id="quizQuestionText"></div>
+                    <div class="quiz-options" id="quizOptions"></div>
+                    <div class="quiz-nav">
+                        <div id="quizFeedbackMsg" style="font-size:13px; font-weight:600;"></div>
+                        <button class="btn btn-accent" id="quizNextBtn" onclick="nextQuestion()" style="display:none;">Next →</button>
+                    </div>
+                </div>
+
+                <!-- Result Screen -->
+                <div id="quizResultScreen" style="display:none;" class="quiz-result-screen">
+                    <div class="quiz-score-ring" id="quizScoreRing">0/0</div>
+                    <div class="quiz-result-title" id="quizResultTitle">Quiz Complete!</div>
+                    <p class="quiz-result-sub" id="quizResultSub"></p>
+                    <div class="quiz-result-breakdown">
+                        <div class="quiz-result-stat">
+                            <div class="rl">Correct</div>
+                            <div class="rv good" id="resCorrect">0</div>
+                        </div>
+                        <div class="quiz-result-stat">
+                            <div class="rl">Wrong</div>
+                            <div class="rv bad" id="resWrong">0</div>
+                        </div>
+                        <div class="quiz-result-stat">
+                            <div class="rl">Score</div>
+                            <div class="rv accent" id="resPercent">0%</div>
+                        </div>
+                    </div>
+                    <div class="quiz-review" id="quizReview"></div>
+                    <button class="btn btn-accent" style="margin-top:20px; padding:13px 28px;" onclick="resetQuiz()">← Try Again</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- FEEDBACK -->
+        <div class="section" id="sec-feedback">
+            <div class="page-header">
+                <div class="page-title">Feedback</div>
+                <div class="page-subtitle">Help us improve your experience</div>
+            </div>
+            <div class="card">
+                <div class="card-title"><span class="icon-badge" style="background:#fce4ec;">💬</span> Share your thoughts</div>
+                <textarea id="fb" placeholder="What's on your mind?" rows="5"></textarea>
+                <button class="btn btn-accent" style="margin-top:12px;" onclick="submitFeedback()">Submit Feedback</button>
+                <div id="fbMsg" style="margin-top:14px; font-size:14px; color:var(--accent3); font-weight:600;"></div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<script>
+    // ── STATE ──
+    let study = JSON.parse(localStorage.getItem('studyData')) || [];
+    let flashcards = JSON.parse(localStorage.getItem('flashcardData')) || [];
+    let groupSession = JSON.parse(localStorage.getItem('groupSession')) || { members: [], chat: [] };
+    let currentUser = localStorage.getItem('currentUser') || null;
+    let chartInstance = null;
+
+    // ── QUIZ STATE ──
+    const sampleQuiz = [
+        { q: "What does HTML stand for?", options: ["HyperText Markup Language","Home Tool Markup Language","Hyperlinks and Text Markup Language","None of the above"], answer: 0 },
+        { q: "Which property is used to change text color in CSS?", options: ["text-color","font-color","color","foreground"], answer: 2 },
+        { q: "What does CSS stand for?", options: ["Creative Style Sheets","Cascading Style Sheets","Computer Style Sheets","Colorful Style Sheets"], answer: 1 },
+        { q: "Which HTML tag creates a hyperlink?", options: ["<link>","<a>","<href>","<url>"], answer: 1 },
+        { q: "Which symbol starts a JavaScript single-line comment?", options: ["//","#","/* */","--"], answer: 0 }
+    ];
+
+    let quizState = { index: 0, correct: 0, wrong: 0, answers: [], answered: false };
+
+    // ── INIT ──
+    window.addEventListener('load', () => {
+        if (currentUser) {
+            document.getElementById('loginOverlay').style.display = 'none';
+            setUserUI(currentUser);
+        }
+        updateStudy();
+        renderFlashcards();
+        renderGroupUI();
+        renderTodos();
+        initNotifications();
+        document.getElementById('qTotalBadge').textContent = sampleQuiz.length;
+    });
+
+    // ── NAV ──
+    function showSection(name, el) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById('sec-' + name).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        if (el) el.classList.add('active');
+    }
+
+    // ── LOGIN ──
+    function setUserUI(name) {
+        document.getElementById('userName').textContent = name;
+        document.getElementById('userAvatar').textContent = name.charAt(0).toUpperCase();
+        const hr = new Date().getHours();
+        const greeting = hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening';
+        document.getElementById('greetingTitle').textContent = `${greeting}, ${name} 👋`;
+    }
+
+    function handleLogin() {
+        const name = document.getElementById('loginName').value.trim();
+        if (!name) return;
+        currentUser = name;
+        localStorage.setItem('currentUser', name);
+        document.getElementById('loginOverlay').style.display = 'none';
+        setUserUI(name);
+        renderGroupUI();
+    }
+
+    document.getElementById('loginName').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+
+    function logout() {
+        leaveGroupSession();
+        currentUser = null;
+        localStorage.removeItem('currentUser');
+        document.getElementById('loginOverlay').style.display = 'flex';
+        document.getElementById('loginName').value = '';
+    }
+
+    // ── STUDY ──
+    function addStudy() {
+        const s = document.getElementById('subject').value.trim();
+        const h = parseFloat(document.getElementById('hours').value);
+        if (!s || isNaN(h) || h <= 0 || h > 24) return toast('Check your inputs');
+        study.push({ s, h, date: new Date().toLocaleDateString() });
+        localStorage.setItem('studyData', JSON.stringify(study));
+        updateStudy();
+        document.getElementById('subject').value = '';
+        document.getElementById('hours').value = '';
+        toast('Session logged! 📚');
+    }
+
+    function removeStudy(i) {
+        study.splice(i, 1);
+        localStorage.setItem('studyData', JSON.stringify(study));
+        updateStudy();
+    }
+
+    function updateStudy() {
+        const list = document.getElementById('studyList');
+        const dashReport = document.getElementById('dashReport');
+        const report = document.getElementById('report');
+
+        if (study.length === 0) {
+            list.innerHTML = '<div class="no-data">No sessions yet. Add your first one!</div>';
+            dashReport.innerHTML = '<div class="no-data">No study sessions recorded yet.</div>';
+            document.getElementById('totalHours').textContent = '0';
+            document.getElementById('totalSubjects').textContent = '0';
+            document.getElementById('avgHours').textContent = '0';
+            document.getElementById('fcCount').textContent = flashcards.length;
+            report.innerHTML = '<div class="no-data">No data yet.</div>';
+            return;
         }
 
-        function removeFlashcard(index) {
-            flashcards.splice(index, 1);
-            localStorage.setItem('flashcardData', JSON.stringify(flashcards));
-            renderFlashcards();
+        list.innerHTML = study.map((s, i) => `
+            <div class="study-item">
+                <div class="info">
+                    <span class="subject">${s.s}</span>
+                    <span class="meta">${s.h} hrs &middot; ${s.date}</span>
+                </div>
+                <button class="btn btn-danger btn-sm" onclick="removeStudy(${i})">Remove</button>
+            </div>`).join('');
+
+        const totalHours = study.reduce((a, s) => a + s.h, 0);
+        const subjects = [...new Set(study.map(s => s.s))];
+        document.getElementById('totalHours').textContent = totalHours.toFixed(1);
+        document.getElementById('totalSubjects').textContent = subjects.length;
+        document.getElementById('avgHours').textContent = (totalHours / subjects.length).toFixed(1);
+        document.getElementById('fcCount').textContent = flashcards.length;
+
+        const stats = {};
+        study.forEach(s => stats[s.s] = (stats[s.s] || 0) + s.h);
+        const maxH = Math.max(...Object.values(stats));
+
+        updateChart(stats);
+
+        const rows = Object.entries(stats).map(([sub, hrs]) => `
+            <div class="report-row">
+                <span style="min-width:120px;font-weight:600;font-size:13px;">${sub}</span>
+                <div class="bar-wrap"><div class="bar-fill" style="width:${(hrs/maxH*100).toFixed(0)}%"></div></div>
+                <span style="font-size:13px;color:var(--ink-muted);min-width:50px;text-align:right;">${hrs.toFixed(1)} h</span>
+            </div>`).join('');
+
+        dashReport.innerHTML = rows;
+        report.innerHTML = rows;
+    }
+
+    // ── FLASHCARDS ──
+    function addFlashcard() {
+        const f = document.getElementById('fcFront').value.trim();
+        const b = document.getElementById('fcBack').value.trim();
+        if (!f || !b) return toast('Fill both sides!');
+        flashcards.push({ front: f, back: b });
+        localStorage.setItem('flashcardData', JSON.stringify(flashcards));
+        document.getElementById('fcFront').value = '';
+        document.getElementById('fcBack').value = '';
+        renderFlashcards();
+        updateStudy();
+        toast('Flashcard created! 🗂️');
+    }
+
+    function renderFlashcards() {
+        const grid = document.getElementById('flashcardGrid');
+        if (flashcards.length === 0) {
+            grid.innerHTML = '<div class="no-data" style="grid-column:1/-1;">No flashcards yet. Create your first one!</div>';
+            return;
         }
+        grid.innerHTML = flashcards.map((fc, i) => `
+            <div class="flashcard" onclick="this.classList.toggle('flipped')">
+                <button class="delete-fc" onclick="event.stopPropagation();removeFlashcard(${i})">×</button>
+                <div class="flashcard-inner">
+                    <div class="flashcard-front"><p>${fc.front}</p></div>
+                    <div class="flashcard-back"><p>${fc.back}</p></div>
+                </div>
+            </div>`).join('');
+    }
 
-        function updateChart(subjectStats) {
-            const ctx = document.getElementById('studyChart').getContext('2d');
-            if(chartInstance) chartInstance.destroy();
-            chartInstance = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: Object.keys(subjectStats),
-                    datasets: [{
-                        data: Object.values(subjectStats),
-                        backgroundColor: ['#667eea','#764ba2','#48bb78','#ed8936','#4299e1','#ff6b6b']
-                    }]
-                },
-                options: { responsive: true }
-            });
-        }
+    function removeFlashcard(i) {
+        flashcards.splice(i, 1);
+        localStorage.setItem('flashcardData', JSON.stringify(flashcards));
+        renderFlashcards();
+        updateStudy();
+    }
 
-        function downloadReport(){
-            const reportText = `Total Hours: ${document.getElementById('totalHours').textContent}\nSubjects: ${document.getElementById('totalSubjects').textContent}`;
-            const blob = new Blob([reportText], {type: 'text/plain'});
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'study_report.txt';
-            link.click();
-        }
-
-        function addTodo() {
-            const input = document.getElementById('todoInput');
-            if(!input.value) return;
-            const id = Date.now();
-            document.getElementById('todoList').insertAdjacentHTML('beforeend', 
-                `<div class="todo-item" id="task-${id}">
-                    <span>${input.value}</span>
-                    <button class="remove-btn" onclick="document.getElementById('task-${id}').remove()">Remove</button>
-                </div>`);
-            input.value = '';
-        }
-
-        const sampleQuiz = [
-            {q: "HTML stands for?", options: ["HyperText Markup Language","Home Tool","Hyperlinks"], answer: 0},
-            {q: "CSS stands for?", options: ["Creative Style","Cascading Style Sheets","Computer Sheets"], answer: 1}
-        ];
-
-        function startQuiz() {
-            const container = document.getElementById('quizContainer');
-            container.innerHTML = sampleQuiz.map((item, idx) => 
-                `<p><strong>Q${idx+1}:</strong> ${item.q}</p>` +
-                item.options.map((opt, i) => `<label><input type="radio" name="q${idx}" value="${i}"> ${opt}</label><br>`).join('')
-            ).join('') + '<button onclick="gradeQuiz()">Submit Quiz</button>';
-        }
-
-        function gradeQuiz() {
-            let score = 0;
-            sampleQuiz.forEach((item, idx) => {
-                const radios = document.getElementsByName('q'+idx);
-                radios.forEach(r => { if(r.checked && parseInt(r.value) === item.answer) score++; });
-            });
-            document.getElementById('quizResult').textContent = `Score: ${score}/${sampleQuiz.length}`;
-        }
-
-        function submitFeedback() {
-            const fb = document.getElementById('fb');
-            if(fb.value) {
-                document.getElementById('fbMsg').innerHTML = '<strong>Thanks for the feedback!</strong>';
-                fb.value = '';
+    // ── CHART ──
+    function updateChart(stats) {
+        const ctx = document.getElementById('studyChart').getContext('2d');
+        if (chartInstance) chartInstance.destroy();
+        chartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(stats),
+                datasets: [{ data: Object.values(stats), backgroundColor: ['#5b4fff','#ff4f7b','#00c89f','#ffb94f','#4299e1','#a78bfa'], borderWidth: 0, hoverOffset: 8 }]
+            },
+            options: {
+                responsive: true, cutout: '60%',
+                plugins: { legend: { position: 'bottom', labels: { padding: 16, font: { family: 'DM Sans', size: 13 } } } }
             }
+        });
+    }
+
+    // ── GROUP ──
+    function renderGroupUI() {
+        const bar = document.getElementById('memberBar');
+        bar.innerHTML = '';
+        for (let i = 0; i < 5; i++) {
+            const n = groupSession.members[i] || 'Empty';
+            bar.innerHTML += `<div class="member-slot ${groupSession.members[i] ? 'active' : ''}">${n}</div>`;
+        }
+        const isMember = groupSession.members.includes(currentUser);
+        document.getElementById('joinSection').style.display = (currentUser && isMember) ? 'none' : 'block';
+        document.getElementById('chatSection').style.display = (currentUser && isMember) ? 'block' : 'none';
+        if (currentUser && isMember) renderChat();
+    }
+
+    function joinGroupSession() {
+        if (groupSession.members.length >= 5) return toast('Session is full!');
+        if (groupSession.members.includes(currentUser)) return;
+        groupSession.members.push(currentUser);
+        saveGroup(); renderGroupUI();
+    }
+
+    function leaveGroupSession() {
+        groupSession.members = groupSession.members.filter(m => m !== currentUser);
+        saveGroup(); renderGroupUI();
+    }
+
+    function sendMessage() {
+        const input = document.getElementById('chatInput');
+        if (!input.value.trim()) return;
+        groupSession.chat.push({ user: currentUser, text: input.value, type: 'text' });
+        input.value = ''; saveGroup(); renderChat();
+    }
+
+    function sendImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => { groupSession.chat.push({ user: currentUser, img: e.target.result, type: 'image' }); saveGroup(); renderChat(); };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function renderChat() {
+        const box = document.getElementById('chatBox');
+        box.innerHTML = groupSession.chat.map(m => `
+            <div class="chat-msg ${m.user === currentUser ? 'me' : 'others'}">
+                <span class="sender-name">${m.user}</span>
+                ${m.type === 'text' ? m.text : `<img src="${m.img}">`}
+            </div>`).join('');
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function saveGroup() { localStorage.setItem('groupSession', JSON.stringify(groupSession)); }
+
+    // ── REMINDERS & NOTIFICATIONS ──
+    let todos = JSON.parse(localStorage.getItem('todosData')) || [];
+    let reminderTimers = {};
+
+    function initNotifications() {
+        if (!('Notification' in window)) return;
+        if (Notification.permission === 'default') {
+            document.getElementById('notifBanner').style.display = 'block';
+        }
+        // Re-arm any pending reminders after page load
+        todos.forEach(t => { if (t.time && new Date(t.time) > new Date()) armReminder(t); });
+    }
+
+    function requestNotifPermission() {
+        Notification.requestPermission().then(perm => {
+            document.getElementById('notifBanner').style.display = 'none';
+            if (perm === 'granted') toast('🔔 Notifications enabled!');
+            else toast('Notifications blocked. You can enable them in browser settings.');
+        });
+    }
+
+    function addTodo() {
+        const input = document.getElementById('todoInput');
+        const timeInput = document.getElementById('todoTime');
+        const text = input.value.trim();
+        if (!text) return toast('Please enter a task!');
+
+        const reminderTime = timeInput.value || null;
+        if (reminderTime && new Date(reminderTime) <= new Date()) {
+            return toast('⚠️ Reminder time must be in the future!');
         }
 
-        function showNotification(message, type) {
-            const notification = document.createElement('div');
-            notification.style.cssText = `position:fixed; top:20px; right:20px; padding:15px; border-radius:8px; color:white; background:#48bb78; z-index:1000; animation: slideIn 0.4s ease-out;`;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            setTimeout(() => notification.remove(), 3000);
+        const todo = { id: Date.now(), text, time: reminderTime, done: false };
+        todos.push(todo);
+        saveTodos();
+        if (reminderTime) armReminder(todo);
+        input.value = ''; timeInput.value = '';
+        renderTodos();
+        toast(reminderTime ? '✅ Task added with reminder!' : '✅ Task added!');
+    }
+
+    function armReminder(todo) {
+        if (!todo.time) return;
+        const delay = new Date(todo.time) - new Date();
+        if (delay <= 0) return;
+        if (reminderTimers[todo.id]) clearTimeout(reminderTimers[todo.id]);
+        reminderTimers[todo.id] = setTimeout(() => {
+            fireReminder(todo);
+        }, delay);
+    }
+
+    function fireReminder(todo) {
+        // In-app toast always
+        toast(`🔔 Reminder: ${todo.text}`);
+        // Browser notification if allowed
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('📚 StudyTrack Reminder', {
+                body: todo.text,
+                icon: 'https://via.placeholder.com/64/5b4fff/ffffff?text=ST'
+            });
         }
-    </script>
+    }
+
+    function toggleTodo(id) {
+        todos = todos.map(t => t.id === id ? { ...t, done: !t.done } : t);
+        saveTodos(); renderTodos();
+    }
+
+    function removeTodo(id) {
+        if (reminderTimers[id]) { clearTimeout(reminderTimers[id]); delete reminderTimers[id]; }
+        todos = todos.filter(t => t.id !== id);
+        saveTodos(); renderTodos();
+    }
+
+    function saveTodos() { localStorage.setItem('todosData', JSON.stringify(todos)); }
+
+    function renderTodos() {
+        const list = document.getElementById('todoList');
+        const empty = document.getElementById('todoEmpty');
+        if (todos.length === 0) {
+            list.innerHTML = ''; empty.style.display = 'block'; return;
+        }
+        empty.style.display = 'none';
+        list.innerHTML = todos.map(t => {
+            const hasTime = !!t.time;
+            const timeLabel = hasTime ? new Date(t.time).toLocaleString('en-IN', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+            const isPast = hasTime && new Date(t.time) < new Date();
+            return `<div class="todo-item ${t.done ? 'todo-done' : ''}" id="task-${t.id}">
+                <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
+                    <button class="todo-check ${t.done ? 'checked' : ''}" onclick="toggleTodo(${t.id})">${t.done ? '✓' : ''}</button>
+                    <div style="min-width:0;">
+                        <div style="font-size:14px;font-weight:500;${t.done ? 'text-decoration:line-through;color:var(--ink-muted);' : ''}">${t.text}</div>
+                        ${hasTime ? `<div class="todo-time ${isPast && !t.done ? 'overdue' : ''}">
+                            ${isPast && !t.done ? '⚠️ Overdue · ' : '🔔 '}${timeLabel}
+                        </div>` : ''}
+                    </div>
+                </div>
+                <button class="btn btn-danger btn-sm" onclick="removeTodo(${t.id})">Remove</button>
+            </div>`;
+        }).join('');
+    }
+
+    // ── QUIZ ──
+    function startQuiz() {
+        quizState = { index: 0, correct: 0, wrong: 0, answers: [], answered: false };
+        document.getElementById('quizStartScreen').style.display = 'none';
+        document.getElementById('quizResultScreen').style.display = 'none';
+        document.getElementById('quizQuestionScreen').style.display = 'block';
+        renderQuestion();
+    }
+
+    function renderQuestion() {
+        const q = sampleQuiz[quizState.index];
+        const total = sampleQuiz.length;
+        const letters = ['A','B','C','D'];
+
+        document.getElementById('qCounter').textContent = `Question ${quizState.index + 1} of ${total}`;
+        document.getElementById('quizProgress').style.width = `${(quizState.index / total) * 100}%`;
+        document.getElementById('quizQuestionText').textContent = q.q;
+        document.getElementById('qCorrectBadge').textContent = `✓ ${quizState.correct}`;
+        document.getElementById('qWrongBadge').textContent = `✗ ${quizState.wrong}`;
+        document.getElementById('quizFeedbackMsg').textContent = '';
+        document.getElementById('quizNextBtn').style.display = 'none';
+        quizState.answered = false;
+
+        document.getElementById('quizOptions').innerHTML = q.options.map((opt, i) => `
+            <div class="quiz-option" id="opt-${i}" onclick="selectOption(${i})">
+                <div class="quiz-option-letter">${letters[i]}</div>
+                <span>${opt}</span>
+            </div>`).join('');
+    }
+
+    function selectOption(chosen) {
+        if (quizState.answered) return;
+        quizState.answered = true;
+
+        const q = sampleQuiz[quizState.index];
+        const correct = q.answer === chosen;
+        const fb = document.getElementById('quizFeedbackMsg');
+
+        document.querySelectorAll('.quiz-option').forEach((el, i) => {
+            el.style.pointerEvents = 'none';
+            if (i === q.answer) el.classList.add('correct');
+            else if (i === chosen && !correct) el.classList.add('wrong');
+        });
+
+        if (correct) {
+            quizState.correct++;
+            fb.style.color = 'var(--accent3)';
+            fb.textContent = '✓ Correct!';
+        } else {
+            quizState.wrong++;
+            fb.style.color = 'var(--accent2)';
+            fb.textContent = `✗ Correct answer: ${q.options[q.answer]}`;
+        }
+
+        quizState.answers.push({ q: q.q, chosen, correct, correctOpt: q.options[q.answer] });
+        document.getElementById('qCorrectBadge').textContent = `✓ ${quizState.correct}`;
+        document.getElementById('qWrongBadge').textContent = `✗ ${quizState.wrong}`;
+
+        const nextBtn = document.getElementById('quizNextBtn');
+        const isLast = quizState.index === sampleQuiz.length - 1;
+        nextBtn.textContent = isLast ? 'See Results →' : 'Next →';
+        nextBtn.style.display = 'inline-flex';
+    }
+
+    function nextQuestion() {
+        quizState.index++;
+        if (quizState.index >= sampleQuiz.length) showResults();
+        else renderQuestion();
+    }
+
+    function showResults() {
+        document.getElementById('quizQuestionScreen').style.display = 'none';
+        document.getElementById('quizResultScreen').style.display = 'block';
+
+        const total = sampleQuiz.length;
+        const pct = Math.round((quizState.correct / total) * 100);
+
+        const ring = document.getElementById('quizScoreRing');
+        ring.textContent = `${quizState.correct}/${total}`;
+        const colors = pct >= 80 ? '#00c89f' : pct >= 50 ? '#ffb94f' : '#ff4f7b';
+        ring.style.borderColor = colors;
+        ring.style.color = colors;
+
+        document.getElementById('quizResultTitle').textContent = pct >= 80 ? 'Excellent work! 🎉' : pct >= 50 ? 'Good effort! 💪' : 'Keep practicing! 📚';
+        document.getElementById('quizResultSub').textContent = `You scored ${pct}% — ${quizState.correct} correct, ${quizState.wrong} incorrect.`;
+        document.getElementById('resCorrect').textContent = quizState.correct;
+        document.getElementById('resWrong').textContent = quizState.wrong;
+        document.getElementById('resPercent').textContent = pct + '%';
+
+        document.getElementById('quizProgress').style.width = '100%';
+
+        const review = quizState.answers.map((a, i) => `
+            <div class="quiz-review-item ${a.correct ? 'qr-correct' : 'qr-wrong'}">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+                    <div class="qr-q">Q${i+1}: ${a.q}</div>
+                    <div class="qr-mark ${a.correct ? 'ok' : 'no'}">${a.correct ? '✓' : '✗'}</div>
+                </div>
+                <div class="qr-ans">${a.correct ? 'Correct answer!' : `Correct: ${a.correctOpt}`}</div>
+            </div>`).join('');
+
+        document.getElementById('quizReview').innerHTML = '<div style="font-family:Syne,sans-serif;font-size:0.9rem;font-weight:700;margin-bottom:12px;color:var(--ink);">Answer Review</div>' + review;
+    }
+
+    function resetQuiz() {
+        document.getElementById('quizResultScreen').style.display = 'none';
+        document.getElementById('quizStartScreen').style.display = 'block';
+        document.getElementById('quizProgress').style.width = '0%';
+    }
+
+    // ── REPORT DOWNLOAD (HTML) ──
+    function downloadReport() {
+        if (study.length === 0) return toast('No study data to export!');
+        const stats = {};
+        study.forEach(s => stats[s.s] = (stats[s.s] || 0) + s.h);
+        const total = study.reduce((a, s) => a + s.h, 0);
+        const subjects = Object.keys(stats);
+        const colors = ['#5b4fff','#ff4f7b','#00c89f','#ffb94f','#4299e1','#a78bfa'];
+        const maxH = Math.max(...Object.values(stats));
+        const date = new Date().toLocaleDateString('en-IN', { year:'numeric', month:'long', day:'numeric' });
+
+        const rows = Object.entries(stats).map(([sub, hrs], i) => `
+            <tr>
+                <td style="padding:12px 16px;border-bottom:1px solid #f0f0f0;">
+                    <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${colors[i % colors.length]};margin-right:8px;"></span>
+                    ${sub}
+                </td>
+                <td style="padding:12px 16px;border-bottom:1px solid #f0f0f0;">
+                    <div style="background:#f4f3f0;border-radius:4px;height:8px;width:200px;overflow:hidden;">
+                        <div style="background:${colors[i % colors.length]};height:100%;width:${(hrs/maxH*100).toFixed(0)}%;border-radius:4px;"></div>
+                    </div>
+                </td>
+                <td style="padding:12px 16px;border-bottom:1px solid #f0f0f0;font-weight:700;">${hrs.toFixed(1)} hrs</td>
+                <td style="padding:12px 16px;border-bottom:1px solid #f0f0f0;color:#888;">${(hrs/total*100).toFixed(1)}%</td>
+            </tr>`).join('');
+
+        const sessionRows = study.map(s => `
+            <tr>
+                <td style="padding:10px 16px;border-bottom:1px solid #f0f0f0;">${s.s}</td>
+                <td style="padding:10px 16px;border-bottom:1px solid #f0f0f0;">${s.h} hrs</td>
+                <td style="padding:10px 16px;border-bottom:1px solid #f0f0f0;color:#888;">${s.date}</td>
+            </tr>`).join('');
+
+        const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>StudyTrack Report — ${date}</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { font-family:'DM Sans',sans-serif; background:#f4f3f0; color:#0d0d14; margin:0; padding:40px 24px; }
+  .wrap { max-width:780px; margin:0 auto; }
+  .rpt-header { background:#0d0d14; color:#fff; border-radius:16px; padding:36px 40px; margin-bottom:28px; }
+  .rpt-header h1 { font-family:'Syne',sans-serif; font-size:2rem; font-weight:800; margin:0 0 6px; }
+  .rpt-header p { color:rgba(255,255,255,0.5); font-size:14px; margin:0; }
+  .stat-strip { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:28px; }
+  .st { background:#fff; border-radius:12px; padding:20px; border:1px solid rgba(13,13,20,0.08); }
+  .st .lbl { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#888; margin-bottom:6px; }
+  .st .val { font-family:'Syne',sans-serif; font-size:2rem; font-weight:800; }
+  .section-title { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:800; margin:0 0 14px; }
+  table { width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 20px rgba(13,13,20,0.07); margin-bottom:28px; }
+  th { background:#f8f8f8; padding:12px 16px; text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#888; border-bottom:2px solid #f0f0f0; }
+  .footer { text-align:center; color:#bbb; font-size:12px; margin-top:32px; }
+  @media print { body { background:#fff; } .rpt-header { background:#0d0d14 !important; -webkit-print-color-adjust:exact; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="rpt-header">
+    <h1>📚 StudyTrack Report</h1>
+    <p>Generated on ${date} &nbsp;·&nbsp; ${currentUser || 'Student'}</p>
+  </div>
+  <div class="stat-strip">
+    <div class="st"><div class="lbl">Total Hours</div><div class="val">${total.toFixed(1)}</div></div>
+    <div class="st"><div class="lbl">Subjects</div><div class="val">${subjects.length}</div></div>
+    <div class="st"><div class="lbl">Avg / Subject</div><div class="val">${(total/subjects.length).toFixed(1)}</div></div>
+  </div>
+  <div class="section-title">Subject Breakdown</div>
+  <table>
+    <tr><th>Subject</th><th>Progress</th><th>Hours</th><th>Share</th></tr>
+    ${rows}
+  </table>
+  <div class="section-title">All Sessions</div>
+  <table>
+    <tr><th>Subject</th><th>Hours</th><th>Date</th></tr>
+    ${sessionRows}
+  </table>
+  <div class="footer">StudyTrack &mdash; Keep learning every day 🚀</div>
+</div>
+</body>
+</html>`;
+
+        // Safe base64 encode with full Unicode support
+        const b64 = btoa(unescape(encodeURIComponent(html)));
+        const a = document.createElement('a');
+        a.href = 'data:text/html;base64,' + b64;
+        a.download = `StudyTrack_Report_${new Date().toISOString().slice(0,10)}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        toast('Report downloaded! 📄');
+    }
+
+    // ── FEEDBACK ──
+    function submitFeedback() {
+        const fb = document.getElementById('fb');
+        if (fb.value.trim()) {
+            document.getElementById('fbMsg').textContent = '✓ Thanks for the feedback!';
+            fb.value = '';
+        }
+    }
+
+    // ── TOAST ──
+    function toast(msg) {
+        const t = document.createElement('div');
+        t.className = 'toast'; t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+    }
+</script>
 </body>
 </html>
